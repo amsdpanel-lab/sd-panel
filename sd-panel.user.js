@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SD Panel
 // @namespace    amimirsh-watch-sorter
-// @version      1.5.2
+// @version      1.5.3
 // @description  Foresight Watch Sorter by Amir Hossein Mirshekari @amimirsh
 // @match        https://sort-eu.aka.amazon.com/foresight*
 // @match        https://trans-logistics-eu.amazon.com/sortcenter/tantei*
@@ -26,8 +26,11 @@
 (function () {
   'use strict';
 
-  const SCRIPT_NAME = 'WatchSorter';
-  const SCRIPT_VERSION = '1.5.0';
+const SCRIPT_NAME = 'WatchSorter';
+const SCRIPT_VERSION = '1.5.1';
+
+const SCRIPT_UPDATE_META_URL = 'https://amsdpanel-lab.github.io/sd-panel/sd-panel.meta.js';
+const SCRIPT_INSTALL_URL = 'https://amsdpanel-lab.github.io/sd-panel/sd-panel.user.js';
 const SCRIPT_AUTHOR = 'Amir Hossein Mirshekari @amimirsh';
 
 
@@ -440,7 +443,87 @@ if (runtimeLogs.length > 200) runtimeLogs.shift();
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;');
   }
+function compareVersions(a, b) {
+  const pa = String(a || '').split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b || '').split('.').map(n => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
 
+  for (let i = 0; i < len; i += 1) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff;
+  }
+
+  return 0;
+}
+
+function extractVersionFromMeta(text) {
+  const match = String(text || '').match(/\/\/\s*@version\s+([^\s]+)/);
+  return match ? match[1].trim() : '';
+}
+
+function showUpdateBanner(latestVersion) {
+  if (document.getElementById('ws-update-banner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'ws-update-banner';
+  banner.style.cssText = `
+    position: fixed;
+    right: 18px;
+    bottom: 54px;
+    z-index: 1000002;
+    background: #fff8e1;
+    color: #7a5a00;
+    border: 1px solid #d4a017;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    max-width: 360px;
+  `;
+
+  banner.innerHTML = `
+    <div style="margin-bottom:8px;">
+      New SD Panel update available: v${escapeHtml(latestVersion)}
+      <br>
+      Current version: v${escapeHtml(SCRIPT_VERSION)}
+    </div>
+    <button id="ws-update-now-btn" type="button" style="
+      border: 1px solid #7a5a00;
+      background: #fff;
+      color: #7a5a00;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    ">Update now</button>
+  `;
+
+  document.body.appendChild(banner);
+
+  document.getElementById('ws-update-now-btn')?.addEventListener('click', () => {
+    window.open(SCRIPT_INSTALL_URL, '_blank');
+  });
+}
+
+function checkForScriptUpdate() {
+  GM_xmlhttpRequest({
+    method: 'GET',
+    url: `${SCRIPT_UPDATE_META_URL}?t=${Date.now()}`,
+    onload: response => {
+      const latestVersion = extractVersionFromMeta(response.responseText);
+      if (!latestVersion) return;
+
+      if (compareVersions(latestVersion, SCRIPT_VERSION) > 0) {
+        showUpdateBanner(latestVersion);
+      }
+    },
+    onerror: () => {},
+    ontimeout: () => {},
+  });
+}
     function buildTanteiUrlForArea(areaName) {
   const facility = String(state?.route?.facility || '').trim();
   const area = String(areaName || '').trim();
@@ -15120,4 +15203,5 @@ installXhrHook();
   }
 
   init();
+	setTimeout(checkForScriptUpdate, 3000);
 })();
