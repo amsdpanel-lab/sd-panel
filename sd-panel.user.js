@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SD Panel
 // @namespace    amimirsh-watch-sorter
-// @version      1.5.0
+// @version      1.5.1
 // @description  Foresight Watch Sorter by Amir Hossein Mirshekari @amimirsh
 // @match        https://sort-eu.aka.amazon.com/foresight*
 // @match        https://trans-logistics-eu.amazon.com/sortcenter/tantei*
